@@ -117,6 +117,7 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			progID.Equals(RAYDIUM_CPMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_AMM_PROGRAM_ID) ||
 			progID.Equals(RAYDIUM_CONCENTRATED_LIQUIDITY_PROGRAM_ID) ||
+			progID.Equals(RAYDIUM_LAUNCHLAB_PROGRAM_ID) ||
 			progID.Equals(solana.MustPublicKeyFromBase58("AP51WLiiqTdbZfgyRMs35PsZpdmLuPDdHYmrB23pEtMU")):
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i, RAYDIUM)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
@@ -404,7 +405,11 @@ func (p *Parser) getInnerInstructions(index int) []solana.CompiledInstruction {
 
 	for _, inner := range p.txMeta.InnerInstructions {
 		if inner.Index == uint16(index) {
-			return inner.Instructions
+			result := make([]solana.CompiledInstruction, len(inner.Instructions))
+			for i, inst := range inner.Instructions {
+				result[i] = p.convertRPCToSolanaInstruction(inst)
+			}
+			return result
 		}
 	}
 

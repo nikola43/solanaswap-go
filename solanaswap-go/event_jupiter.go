@@ -42,9 +42,8 @@ func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
-				// fmt.Println("Processing inner instruction:", innerInstruction)
-				if p.isJupiterRouteEventInstruction(innerInstruction) {
-					eventData, err := p.parseJupiterRouteEventInstruction(innerInstruction)
+				if p.isJupiterRouteEventInstruction(p.convertRPCToSolanaInstruction(innerInstruction)) {
+					eventData, err := p.parseJupiterRouteEventInstruction(p.convertRPCToSolanaInstruction(innerInstruction))
 					if err != nil {
 						p.Log.Errorf("error processing Jupiter trade event: %s", err)
 					}
@@ -283,7 +282,7 @@ func (p *Parser) extractSPLDecimals() error {
 	}
 	for _, innerSet := range p.txMeta.InnerInstructions {
 		for _, instr := range innerSet.Instructions {
-			processInstruction(instr)
+			processInstruction(p.convertRPCToSolanaInstruction(instr))
 		}
 	}
 
