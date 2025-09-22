@@ -53,8 +53,8 @@ type Trade struct {
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
 
-	txSig := solana.MustSignatureFromBase58("jhz8dHkk2Y5nZpNiMSKBwLah5Bkuxv5Fi6vxsooCEqHBCfpsS7RzWbMvB7KG6PvZ2L7MTBnzNcZrg42QEHiVcR2") // buy pumpswap
-	// txSig := solana.MustSignatureFromBase58("3JKnwtnmb7hJswPd3WjqmoBrDwRce5dvSN2jCjtX1J4KPdaPZdBgjvfrbTcPQutYuFqTDKacyNTUe6L1hThYdYjM") // buy pumpswap
+	// txSig := solana.MustSignatureFromBase58("4dJi7gUfPvKFytcujzbGKCwWDGrrunZwsuPZPWUhjBCnR2GXiAkZwzY7k8yEue6EKRYDKZN7ZNzfk8hZXsY2B747") //fill
+	txSig := solana.MustSignatureFromBase58("DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF") // buy pumpswap
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(
@@ -78,6 +78,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error parsing transaction: %s", err)
 	}
+	// fmt.Println("Transaction Data:", transactionData)
 
 	marshalledData, _ := json.MarshalIndent(transactionData, "", "  ")
 	fmt.Println(string(marshalledData))

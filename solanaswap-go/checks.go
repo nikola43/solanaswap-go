@@ -2,6 +2,7 @@ package solanaswapgo
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/mr-tron/base58"
@@ -73,8 +74,54 @@ func (p *Parser) isJupiterRouteEventInstruction(inst solana.CompiledInstruction)
 		return false
 	}
 	decodedBytes, err := base58.Decode(inst.Data.String())
+	fmt.Println("decodedBytes", decodedBytes)
 	if err != nil {
 		return false
 	}
+	decodedBytesHex := fmt.Sprintf("%x", decodedBytes)
+	fmt.Println("decodedBytesHex", decodedBytesHex[:16])
+
+	JupiterRouteEventDiscriminatorHex := fmt.Sprintf("%x", JupiterRouteEventDiscriminator[:])
+	fmt.Println("JupiterRouteEventDiscriminatorHex", JupiterRouteEventDiscriminatorHex[:16])
+
 	return bytes.Equal(decodedBytes[:16], JupiterRouteEventDiscriminator[:])
 }
+
+func (p *Parser) isJupiterFillEventInstruction(inst solana.CompiledInstruction) bool {
+
+	// if !p.allAccountKeys[inst.ProgramIDIndex].Equals(JUPITER_FILL_PROGRAM_ID) {
+	// 	return false
+	// }
+
+	decodedBytes, err := base58.Decode(inst.Data.String())
+	if err != nil {
+		return false
+	}
+	// fmt.Println("decodedBytes", decodedBytes)
+
+	decodedBytesHex := fmt.Sprintf("%x", decodedBytes)
+	fmt.Println("decodedBytesHex", decodedBytesHex)
+
+	// JupiterFillEventDiscriminatorHex := fmt.Sprintf("%x", JupiterFillEventDiscriminator[:])
+	// fmt.Println("JupiterRouteEventDiscriminatorHex", JupiterFillEventDiscriminatorHex[:16])
+
+	// str, ok := lo.Find(logMessages, func(x string) bool {
+	// 	fmt.Println("x", x)
+	// 	logContainsFillLog := strings.Contains(x, "Program log: Instruction: Fill")
+	// 	return logContainsFillLog
+	// })
+	// fmt.Println("str", str)
+	// fmt.Println("ok", ok)
+	return true
+}
+
+// func (p *Parser) isJupiterFillEventInstruction(logMessages []string) bool {
+// 	str, ok := lo.Find(logMessages, func(x string) bool {
+// 		fmt.Println("x", x)
+// 		logContainsFillLog := strings.Contains(x, "Program log: Instruction: Fill")
+// 		return logContainsFillLog
+// 	})
+// 	fmt.Println("str", str)
+// 	fmt.Println("ok", ok)
+// 	return ok
+// }

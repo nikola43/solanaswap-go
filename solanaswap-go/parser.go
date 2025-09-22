@@ -81,10 +81,15 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 	skip := false
 	for i, outerInstruction := range p.txInfo.Message.Instructions {
 		progID := p.allAccountKeys[outerInstruction.ProgramIDIndex]
+		fmt.Println("Processing instruction", i, "with program ID", progID)
 		switch {
 		case progID.Equals(JUPITER_PROGRAM_ID):
 			skip = true
 			parsedSwaps = append(parsedSwaps, p.processJupiterSwaps(i)...)
+		case progID.Equals(JUPITER_FILL_PROGRAM_ID):
+			fmt.Println("Processing Jupiter Fill instruction", i)
+			skip = true
+			parsedSwaps = append(parsedSwaps, p.processJupiterFillSwaps(i)...)
 		case progID.Equals(MOONSHOT_PROGRAM_ID):
 			skip = true
 			parsedSwaps = append(parsedSwaps, p.processMoonshotSwaps()...)
@@ -147,6 +152,7 @@ type SwapInfo struct {
 }
 
 func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
+	fmt.Println("Processing swap data...", swapDatas)
 	if len(swapDatas) == 0 {
 		return nil, fmt.Errorf("no swap data provided")
 	}
