@@ -42,6 +42,10 @@ func (p *Parser) processJupiterSwaps(instructionIndex int) []SwapData {
 	for _, innerInstructionSet := range p.txMeta.InnerInstructions {
 		if innerInstructionSet.Index == uint16(instructionIndex) {
 			for _, innerInstruction := range innerInstructionSet.Instructions {
+
+				//if p.isJupiterRouteEventInstruction(innerInstruction) {
+				//eventData, err := p.parseJupiterRouteEventInstruction(innerInstruction)
+
 				if p.isJupiterRouteEventInstruction(p.convertRPCToSolanaInstruction(innerInstruction)) {
 					eventData, err := p.parseJupiterRouteEventInstruction(p.convertRPCToSolanaInstruction(innerInstruction))
 					if err != nil {

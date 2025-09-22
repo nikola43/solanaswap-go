@@ -53,10 +53,11 @@ type Trade struct {
 
 func main() {
 	rpcClient := rpc.New(rpc.MainNetBeta.RPC)
-	txSig := solana.MustSignatureFromBase58("seHVUcQ2UcKpj36PTQ6GSrYA11CTX8eTiXwKfr2Uk39uD96ktUwZWow2m49mHkSRYDKYhSKckxTY3WEt4LPVrrr")
+	// txSig := solana.MustSignatureFromBase58("seHVUcQ2UcKpj36PTQ6GSrYA11CTX8eTiXwKfr2Uk39uD96ktUwZWow2m49mHkSRYDKYhSKckxTY3WEt4LPVrrr")
 
 	// txSig := solana.MustSignatureFromBase58("4dJi7gUfPvKFytcujzbGKCwWDGrrunZwsuPZPWUhjBCnR2GXiAkZwzY7k8yEue6EKRYDKZN7ZNzfk8hZXsY2B747") //fill
-	txSig := solana.MustSignatureFromBase58("DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF") // buy pumpswap
+	txSig := solana.MustSignatureFromBase58("2z1FLDPdQwcMb3J2AsWsM3gky5X1frEzZKj4eC8hyESMiK1yfcZbPex8KEfM95gdioFvWjaVxcEstMg69eTZhmzh") // buy meteora bonding curve
+	// txSig := solana.MustSignatureFromBase58("DBctXdTTtvn7Rr4ikeJFCBz4AtHmJRyjHGQFpE59LuY3Shb7UcRJThAXC7TGRXXskXuu9LEm9RqtU6mWxe5cjPF") // buy pumpswap
 
 	var maxTxVersion uint64 = 0
 	tx, err := rpcClient.GetTransaction(

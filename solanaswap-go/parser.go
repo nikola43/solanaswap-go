@@ -122,7 +122,7 @@ func (p *Parser) ParseTransaction() ([]SwapData, error) {
 			parsedSwaps = append(parsedSwaps, p.processRaydSwaps(i, RAYDIUM)...)
 		case progID.Equals(ORCA_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processOrcaSwaps(i)...)
-		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID) || progID.Equals(METEORA_DLMM_PROGRAM_ID):
+		case progID.Equals(METEORA_PROGRAM_ID) || progID.Equals(METEORA_POOLS_PROGRAM_ID) || progID.Equals(METEORA_DLMM_PROGRAM_ID) || progID.Equals(METEORA_BONDING_CURVE_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processMeteoraSwaps(i)...)
 		case progID.Equals(PUMPFUN_AMM_PROGRAM_ID):
 			parsedSwaps = append(parsedSwaps, p.processPumpfunAMMSwaps(i)...)
@@ -170,6 +170,7 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 
 	jupiterSwaps := make([]SwapData, 0)
 	pumpfunSwaps := make([]SwapData, 0)
+	meteoraSwaps := make([]SwapData, 0)
 	otherSwaps := make([]SwapData, 0)
 
 	for _, swapData := range swapDatas {
@@ -178,6 +179,8 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 			jupiterSwaps = append(jupiterSwaps, swapData)
 		case PUMP_FUN:
 			pumpfunSwaps = append(pumpfunSwaps, swapData)
+		case METEORA:
+			meteoraSwaps = append(meteoraSwaps, swapData)
 		default:
 			otherSwaps = append(otherSwaps, swapData)
 		}
@@ -273,6 +276,15 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 		}
 	}
 
+	if len(meteoraSwaps) > 0 {
+		// Process Meteora bonding curve swaps
+		swapInfo.TokenInMint, swapInfo.TokenInAmount, swapInfo.TokenInDecimals,
+			swapInfo.TokenOutMint, swapInfo.TokenOutAmount, swapInfo.TokenOutDecimals = p.processMeteoraBondingCurveSwaps(meteoraSwaps)
+		swapInfo.AMMs = append(swapInfo.AMMs, string(METEORA))
+		swapInfo.Timestamp = time.Now()
+		return swapInfo, nil
+	}
+
 	if len(otherSwaps) > 0 {
 		// Track the chronological order of transfers
 		var allTransfers []TokenTransfer
@@ -313,6 +325,57 @@ func (p *Parser) ProcessSwapData(swapDatas []SwapData) (*SwapInfo, error) {
 	}
 
 	return nil, fmt.Errorf("no valid swaps found")
+}
+
+func (p *Parser) processMeteoraBondingCurveSwaps(swaps []SwapData) (solana.PublicKey, uint64, uint8, solana.PublicKey, uint64, uint8) {
+	signer := p.allAccountKeys[0]
+
+	var solIn, solOut, tokenIn, tokenOut uint64
+	var solMint, tokenMint solana.PublicKey
+	var solDecimals, tokenDecimals uint8 = 9, 0 // SOL has 9 decimals
+
+	for _, swap := range swaps {
+		if transfer, ok := swap.Data.(*TransferCheck); ok {
+			amount, _ := strconv.ParseUint(transfer.Info.TokenAmount.Amount, 10, 64)
+			if transfer.Info.Mint == NATIVE_SOL_MINT_PROGRAM_ID.String() {
+				// SOL transfer
+				if transfer.Info.Authority == signer.String() {
+					// User is sending SOL
+					solOut += amount
+					solMint = NATIVE_SOL_MINT_PROGRAM_ID
+				} else if transfer.Info.Destination == signer.String() {
+					// User is receiving SOL
+					solIn += amount
+					solMint = NATIVE_SOL_MINT_PROGRAM_ID
+				}
+			} else {
+				// Token transfer
+				if transfer.Info.Authority == signer.String() {
+					// User is sending tokens
+					tokenOut += amount
+					tokenMint = solana.MustPublicKeyFromBase58(transfer.Info.Mint)
+					tokenDecimals = transfer.Info.TokenAmount.Decimals
+				} else {
+					// Assume token going to user's ATA
+					tokenIn += amount
+					tokenMint = solana.MustPublicKeyFromBase58(transfer.Info.Mint)
+					tokenDecimals = transfer.Info.TokenAmount.Decimals
+				}
+			}
+		}
+	}
+
+	// Determine if buy or sell
+	if solOut > 0 && tokenIn > 0 {
+		// Buy: SOL out, tokens in
+		return solMint, solOut, solDecimals, tokenMint, tokenIn, tokenDecimals
+	} else if tokenOut > 0 && solIn > 0 {
+		// Sell: tokens out, SOL in
+		return tokenMint, tokenOut, tokenDecimals, solMint, solIn, solDecimals
+	}
+
+	// Fallback
+	return solana.PublicKey{}, 0, 0, solana.PublicKey{}, 0, 0
 }
 
 func getTransferFromSwapData(swapData SwapData) *TokenTransfer {
@@ -368,7 +431,8 @@ func (p *Parser) processRouterSwaps(instructionIndex int) []SwapData {
 
 		case (progID.Equals(METEORA_PROGRAM_ID) ||
 			progID.Equals(METEORA_POOLS_PROGRAM_ID) ||
-			progID.Equals(METEORA_DLMM_PROGRAM_ID)) && !processedProtocols[PROTOCOL_METEORA]:
+			progID.Equals(METEORA_DLMM_PROGRAM_ID) ||
+			progID.Equals(METEORA_BONDING_CURVE_PROGRAM_ID)) && !processedProtocols[PROTOCOL_METEORA]:
 			processedProtocols[PROTOCOL_METEORA] = true
 			if meteoraSwaps := p.processMeteoraSwaps(instructionIndex); len(meteoraSwaps) > 0 {
 				swaps = append(swaps, meteoraSwaps...)
